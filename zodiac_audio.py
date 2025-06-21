@@ -39,19 +39,24 @@ def main(lang_code):
     log_print("INFO", "=== Starting Zodiac Audio Generation Process ===")
     log_print("INFO", f"Language code received: {lang_code}")
     
-    # Tamil, English, Hindi zodiac text
-    langs = ['ta', 'en-in', 'hi']
+    # Language mapping for zodiac text generation
+    zodiac_langs = ['ta', 'en-in', 'hi']
     
-    if lang_code < 0 or lang_code >= len(langs):
-        log_print("ERROR", f"Invalid language code: {lang_code}. Valid range: 0-{len(langs)-1}")
+    # Language mapping for gTTS (different format)
+    gtts_langs = ['ta', 'en', 'hi']
+    
+    if lang_code < 0 or lang_code >= len(zodiac_langs):
+        log_print("ERROR", f"Invalid language code: {lang_code}. Valid range: 0-{len(zodiac_langs)-1}")
         raise ValueError(f"Invalid language code: {lang_code}")
     
-    lang = langs[lang_code]
-    log_print("INFO", f"Selected language: {lang} (code: {lang_code})")
+    zodiac_lang = zodiac_langs[lang_code]
+    gtts_lang = gtts_langs[lang_code]
+    log_print("INFO", f"Selected zodiac language: {zodiac_lang} (code: {lang_code})")
+    log_print("INFO", f"Selected gTTS language: {gtts_lang}")
     
     try:
         log_print("INFO", "Calling zodiac_text_main to generate zodiac content")
-        zodiac_text = zodiac_text_main(lang)
+        zodiac_text = zodiac_text_main(zodiac_lang)
         
         if not zodiac_text or zodiac_text.startswith("An error occurred"):
             log_print("ERROR", "Failed to get zodiac text from zodiac_text_main")
@@ -60,8 +65,8 @@ def main(lang_code):
         log_print("INFO", "Zodiac text generated successfully")
         log_print("DEBUG", f"Zodiac text preview: {zodiac_text[:100]}...")
         
-        # Generate audio from text
-        audio_buffer = zodiac_reader(zodiac_text, lang)
+        # Generate audio from text using gTTS language code
+        audio_buffer = zodiac_reader(zodiac_text, gtts_lang)
         
         log_print("INFO", "=== Zodiac Audio Generation Completed Successfully ===")
         return audio_buffer
