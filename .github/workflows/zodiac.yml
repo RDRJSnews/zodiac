@@ -67,6 +67,40 @@ jobs:
         run: |
           echo "${{ secrets.YOUTUBE_TOKEN_BASE64 }}" | base64 -d > youtube_token.pickle
 
+      - name: Validate template video file
+        run: |
+          echo "Validating template.mp4 file..."
+          if [ ! -f "template.mp4" ]; then
+            echo "ERROR: template.mp4 file not found!"
+            exit 1
+          fi
+          
+          file_size=$(stat -c%s "template.mp4" 2>/dev/null || stat -f%z "template.mp4" 2>/dev/null || echo "0")
+          echo "Template file size: $file_size bytes"
+          
+          if [ "$file_size" -eq 0 ]; then
+            echo "ERROR: template.mp4 file is empty!"
+            exit 1
+          fi
+          
+          if [ "$file_size" -lt 1000000 ]; then
+            echo "WARNING: template.mp4 file seems too small ($file_size bytes). It might be corrupted."
+          fi
+          
+          # Try to validate with ffprobe if available
+          if command -v ffprobe >/dev/null 2>&1; then
+            echo "Running ffprobe validation..."
+            if ffprobe -v quiet -print_format json -show_format template.mp4 >/dev/null 2>&1; then
+              echo "✅ Template video file validation passed"
+            else
+              echo "❌ Template video file validation failed - file appears to be corrupted"
+              echo "Please upload a new, properly formatted template.mp4 file to the repository"
+              exit 1
+            fi
+          else
+            echo "ffprobe not available, skipping detailed validation"
+          fi
+
       - name: Run zodiac workflows
         run: |
           if [[ "$LANGUAGE" == "all" || "$LANGUAGE" == "ta" ]]; then
