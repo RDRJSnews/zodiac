@@ -86,10 +86,47 @@ def change_audio_speed(input_buffer, speed_factor=1.0):
         log_print("ERROR", f"Error in audio speed change: {str(e)}")
         raise
 
+def validate_video_file(video_path):
+    """Validate that the video file exists and is not corrupted."""
+    log_print("INFO", f"=== Validating video file: {video_path} ===")
+    
+    if not os.path.exists(video_path):
+        log_print("ERROR", f"Video file not found: {video_path}")
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+    
+    file_size = os.path.getsize(video_path)
+    log_print("INFO", f"Video file size: {file_size} bytes")
+    
+    if file_size == 0:
+        log_print("ERROR", f"Video file is empty: {video_path}")
+        raise ValueError(f"Video file is empty: {video_path}")
+    
+    if file_size < 1000000:  # Less than 1MB
+        log_print("WARNING", f"Video file seems too small ({file_size} bytes). It might be corrupted.")
+    
+    # Try to get basic file info using ffprobe if available
+    try:
+        import subprocess
+        result = subprocess.run(['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', video_path], 
+                              capture_output=True, text=True, timeout=10)
+        if result.returncode != 0:
+            log_print("ERROR", f"Failed to validate video file with ffprobe: {result.stderr}")
+            raise ValueError(f"Video file appears to be corrupted or invalid: {video_path}")
+        log_print("INFO", "Video file validation passed")
+    except FileNotFoundError:
+        log_print("WARNING", "ffprobe not available, skipping detailed validation")
+    except subprocess.TimeoutExpired:
+        log_print("WARNING", "ffprobe validation timed out, continuing anyway")
+    except Exception as e:
+        log_print("WARNING", f"Video validation failed but continuing: {str(e)}")
+
 def repeat_video_to_match_audio(video_path, audio_buffer):
     """Repeat video to match audio duration and combine them."""
     log_print("INFO", "=== Starting Video-Audio Combination Process ===")
     log_print("INFO", f"Video path: {video_path}")
+    
+    # Validate the video file first
+    validate_video_file(video_path)
     
     try:
         log_print("INFO", "Loading video file")
