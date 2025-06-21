@@ -1,0 +1,116 @@
+name: Tamil Zodiac Automation
+
+on:
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      language:
+        description: 'Language for zodiac generation'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - en-in
+          - ta
+          - hi
+      retry_on_failure:
+        description: 'Retry on failure (up to 3 times)'
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    - cron: '0 1 * * *'    # 6:30 AM IST (01:00 UTC)
+
+jobs:
+  run-zodiac:
+    runs-on: ubuntu-latest
+    
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      PYTHONUNBUFFERED: 1  # Ensure Python output is not buffered
+
+    steps:
+      - name: Set language variable
+        run: |
+          if [ -z "${{ github.event.inputs.language }}" ]; then
+            echo "LANGUAGE=all" >> $GITHUB_ENV
+          else
+            echo "LANGUAGE=${{ github.event.inputs.language }}" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set up Google credentials
+        env:
+          CLIENT_JSON: ${{ secrets.CLIENT_JSON }}
+        run: |
+          echo "$CLIENT_JSON" > client.json
+          echo "Google credentials file created"
+
+      - name: Restore YouTube token from secret
+        run: |
+          echo "${{ secrets.YOUTUBE_TOKEN_BASE64 }}" | base64 -d > youtube_token.pickle
+
+      - name: Run zodiac workflows
+        run: |
+          if [[ "$LANGUAGE" == "all" || "$LANGUAGE" == "ta" ]]; then
+            echo "Running zodiac_video.py for Tamil"
+            python zodiac_video.py --lang ta
+            echo "Uploading Tamil video to YouTube"
+            python upload_youtube.py --lang ta
+          fi
+          if [[ "$LANGUAGE" == "all" || "$LANGUAGE" == "en-in" ]]; then
+            echo "Running zodiac_video.py for English"
+            python zodiac_video.py --lang en-in
+            echo "Uploading English video to YouTube"
+            python upload_youtube.py --lang en-in
+          fi
+          if [[ "$LANGUAGE" == "all" || "$LANGUAGE" == "hi" ]]; then
+            echo "Running zodiac_video.py for Hindi"
+            python zodiac_video.py --lang hi
+            echo "Uploading Hindi video to YouTube"
+            python upload_youtube.py --lang hi
+          fi
+
+      - name: List files in workspace
+        run: ls -lR
+
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "✅ Tamil Zodiac workflow completed successfully!"
+          echo "📅 Run time: $(date)"
+          echo "🔗 Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Tamil Zodiac workflow failed!"
+          echo "📅 Run time: $(date)"
+          echo "🔗 Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "📋 Check the logs artifact for detailed error information"
+
+      - name: Clean up temporary files
+        if: always()
+        run: |
+          rm -f client.json
+          rm -f youtube_token.pickle
+          rm -f *.wav
+          rm -f "output_video*.mp4"
+          echo "Cleanup completed" 
