@@ -20,6 +20,8 @@ SCOPES = [
     "https://www.googleapis.com/auth/youtube.force-ssl"  # This scope allows playlist modifications
 ]
 
+PLAYLIST_ID = "PLhv_6lhldIL6_-JayMXRAxaFtNIElnkEs"
+
 def log_print(level, message):
     print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} [{level}] {message}")
 
@@ -42,7 +44,7 @@ def generate_title_description_tags(lang_code):
         log_print("INFO", f"Generated title: {TITLE}")
         
         DESCRIPTION = get_gemini_response(f'''Give a best cautchy attractive formatted with oneline space youtube description,
-    with 50 trending # tags in description like #tag1,... , for {TITLE}. Use my channel link https://www.youtube.com/@rdrjsethurajan and the playlist link https://www.youtube.com/playlist?list=PLhv_6lhldIL6_-JayMXRAxaFtNIElnkEs''')
+    with 50 trending # tags in description like #tag1,... , for {TITLE}. Use my channel link https://www.youtube.com/@rdrjsethurajan and the playlist link https://www.youtube.com/playlist?list={PLAYLIST_ID}''')
         log_print("INFO", f"Generated description length: {len(DESCRIPTION)} characters")
         log_print("INFO", f"Generated description: {DESCRIPTION}")
         
@@ -191,7 +193,7 @@ def authenticate_youtube():
         log_print("ERROR", f"Error building YouTube service: {str(e)}")
         raise
 
-def upload_video(youtube, TITLE, DESCRIPTION, TAGS, video_buffer):
+def upload_video(youtube, TITLE, DESCRIPTION, TAGS, PLAYLIST_ID, video_buffer):
     """Upload a video to YouTube with the given title and video buffer."""
     log_print("INFO", "=== Starting Video Upload Process ===")
     log_print("INFO", f"Uploading video with title: {TITLE}")
@@ -255,13 +257,11 @@ def upload_video(youtube, TITLE, DESCRIPTION, TAGS, video_buffer):
         
         # Add to playlist
         try:
-            log_print("INFO", "Adding video to playlist")
-            playlist_id = "PLhv_6lhldIL52dNu3VGOZCjRwDkjeVST_"  # Your playlist ID
             youtube.playlistItems().insert(
                 part="snippet",
                 body={
                     "snippet": {
-                        "playlistId": playlist_id,
+                        "playlistId": PLAYLIST_ID,
                         "resourceId": {
                             "kind": "youtube#video",
                             "videoId": video_id
@@ -270,7 +270,7 @@ def upload_video(youtube, TITLE, DESCRIPTION, TAGS, video_buffer):
                 }
             ).execute()
             log_print("INFO", "Video added to playlist successfully!")
-            log_print("INFO", f"Playlist URL: https://www.youtube.com/playlist?list={playlist_id}")
+            log_print("INFO", f"Playlist URL: https://www.youtube.com/playlist?list={PLAYLIST_ID}")
         except Exception as e:
             log_print("WARNING", f"Could not add video to playlist: {str(e)}")
     
@@ -318,7 +318,7 @@ if __name__ == "__main__":
         try:
             log_print("INFO", "Processing video for upload")
             log_print("INFO", f"Generated title: {TITLE}")
-            upload_video(youtube, TITLE, DESCRIPTION, TAGS, video_buffer)
+            upload_video(youtube, TITLE, DESCRIPTION, TAGS, PLAYLIST_ID, video_buffer)
             log_print("INFO", "Successfully uploaded generated video")
         except Exception as e:
             log_print("ERROR", f"Error uploading video: {str(e)}")
