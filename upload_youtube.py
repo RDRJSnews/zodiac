@@ -38,11 +38,11 @@ def generate_title_description_tags(lang_code):
         else:
             raise ValueError(f"Invalid language code: {lang_code}. Valid range: 0-{len(lang_list)-1}")
 
-        TITLE = get_gemini_response(f'''Give one best cautchy attractive youtube title on today's top India national news in {language}. Give only one title content no extra text. Include emojies.''')
+        TITLE = get_gemini_response(f'''Give one best cautchy attractive youtube title on today's Zodiac Results in {language}. Give only one title content no extra text. Include emojies.''')
         log_print("INFO", f"Generated title: {TITLE}")
         
         DESCRIPTION = get_gemini_response(f'''Give a best cautchy attractive formatted with oneline space youtube description,
-    with 50 trending # tags in description like #tag1,... , for {TITLE}. Use my channel link https://www.youtube.com/@rdrjsethurajan and the playlist link https://www.youtube.com/playlist?list=PLhv_6lhldIL52dNu3VGOZCjRwDkjeVST_''')
+    with 50 trending # tags in description like #tag1,... , for {TITLE}. Use my channel link https://www.youtube.com/@rdrjsethurajan and the playlist link https://www.youtube.com/playlist?list=PLhv_6lhldIL6_-JayMXRAxaFtNIElnkEs''')
         log_print("INFO", f"Generated description length: {len(DESCRIPTION)} characters")
         log_print("INFO", f"Generated description: {DESCRIPTION}")
         
@@ -53,10 +53,10 @@ def generate_title_description_tags(lang_code):
         
     except Exception as e:
         log_print("ERROR", f"Error generating metadata: {str(e)}")
-        # Fallback metadata
-        TITLE = "Today's Top India National News - Latest Updates"
-        DESCRIPTION = "Stay updated with the latest national news from India. #India #News #National #Updates"
-        TAGS = ["India", "News", "National", "Updates", "Latest"]
+        # Fallback metadata for zodiac content
+        TITLE = "Today's Zodiac Horoscope Results - Daily Astrology Predictions"
+        DESCRIPTION = "Get your daily zodiac horoscope predictions and astrology insights. #Zodiac #Horoscope #Astrology #Daily #Predictions"
+        TAGS = ["Zodiac", "Horoscope", "Astrology", "Daily", "Predictions", "Rashifal"]
 
     def get_tags_within_limit(strings_list, max_chars=499):
         sublist = []
@@ -198,7 +198,7 @@ def upload_video(youtube, TITLE, DESCRIPTION, TAGS, video_buffer):
     
     request_body = {
         "snippet": {
-            "categoryId": "25",  # News & Politics
+            "categoryId": "24",  # Entertainment (more appropriate for zodiac/astrology content)
             "title": TITLE,  # Use the provided title
             "description": DESCRIPTION,
            "tags": TAGS,
